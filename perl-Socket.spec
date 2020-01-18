@@ -1,7 +1,7 @@
 %global cpan_version 2.010
 Name:           perl-Socket
 Version:        %(echo '%{cpan_version}' | tr '_' '.')
-Release:        1%{?dist}
+Release:        3%{?dist}
 Summary:        Networking constants and support functions
 License:        GPL+ or Artistic
 Group:          Development/Libraries
@@ -59,6 +59,12 @@ make test
 %{_mandir}/man3/*
 
 %changelog
+* Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 2.010-3
+- Mass rebuild 2014-01-24
+
+* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 2.010-2
+- Mass rebuild 2013-12-27
+
 * Tue Jun 25 2013 Petr Pisar <ppisar@redhat.com> - 2.010-1
 - 2.010 bump
 

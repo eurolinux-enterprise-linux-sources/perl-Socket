@@ -1,0 +1,69 @@
+From 66cdf0a24913a97cfd0909340f2c74b8b60bf56a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20P=C3=ADsa=C5=99?= <ppisar@redhat.com>
+Date: Mon, 20 Apr 2015 17:38:57 +0200
+Subject: [PATCH] Fix calling getnameinfo() on tainted value
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This is upstream fix for calling getnameinfo() on tained value ported
+to 2.010:
+
+2.018   2015/02/12 13:42:41
+        [BUGFIXES]
+         * Fix for "addr is not a string" test to use SvPOKp() before 5.18
+
+2.017   2015/02/10 12:05:14
+        [BUGFIXES]
+         * Remember to SvGETMAGIC in getnameinfo() (RT79557)
+
+https://rt.cpan.org/Public/Bug/Display.html?id=79557
+https://bugzilla.redhat.com/show_bug.cgi?id=1200167
+http://www.gossamer-threads.com/lists/spamassassin/users/189005#189005
+Signed-off-by: Petr Písař <ppisar@redhat.com>
+
+diff --git a/Socket.xs b/Socket.xs
+index 3cc90f6..753cd09 100644
+--- a/Socket.xs
++++ b/Socket.xs
+@@ -520,6 +520,7 @@ static void xs_getnameinfo(pTHX_ CV *cv)
+ 	SP -= items;
+ 
+ 	addr = ST(0);
++	SvGETMAGIC(addr);
+ 
+ 	if(items < 2)
+ 		flags = 0;
+@@ -534,7 +535,7 @@ static void xs_getnameinfo(pTHX_ CV *cv)
+ 	want_host = !(xflags & NIx_NOHOST);
+ 	want_serv = !(xflags & NIx_NOSERV);
+ 
+-	if(!SvPOK(addr))
++	if(!SvPOKp(addr))
+ 		croak("addr is not a string");
+ 
+ 	addr_len = SvCUR(addr);
+diff --git a/t/getnameinfo.t b/t/getnameinfo.t
+index ca24e2c..23a7669 100644
+--- a/t/getnameinfo.t
++++ b/t/getnameinfo.t
+@@ -1,6 +1,6 @@
+ use strict;
+ use warnings;
+-use Test::More tests => 14;
++use Test::More tests => 15;
+ 
+ use Socket qw(:addrinfo AF_INET pack_sockaddr_in inet_aton);
+ 
+@@ -40,3 +40,8 @@ cmp_ok( $err, "==", 0, '$err == 0 for {family=AF_INET,port=80,sinaddr=127.0.0.1}
+ 
+ is( $host, "127.0.0.1", '$host is 127.0.0.1 for NH' );
+ is( $service, $expect_service, "\$service is $expect_service for NH" );
++
++# RT79557
++pack_sockaddr_in( 80, inet_aton( "127.0.0.1" ) ) =~ m/^(.*)$/s;
++( $err, $host, $service ) = getnameinfo( $1, NI_NUMERICHOST|NI_NUMERICSERV );
++cmp_ok( $err, "==", 0, '$err == 0 for $1' ) or diag( '$err was: ' . $err );
+-- 
+2.1.0
+

@@ -1,12 +1,15 @@
 %global cpan_version 2.010
 Name:           perl-Socket
 Version:        %(echo '%{cpan_version}' | tr '_' '.')
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Networking constants and support functions
 License:        GPL+ or Artistic
 Group:          Development/Libraries
 URL:            http://search.cpan.org/dist/Socket/
 Source0:        http://search.cpan.org/CPAN/authors/id/P/PE/PEVANS/Socket-%{cpan_version}.tar.gz
+# Fix calling getnameinfo() on tainted value BZ#1200167
+# Backported fixes from 2.017 and 2.018
+Patch0:         Socket-2.018-Fix-calling-getnameinfo-on-tainted-value.patch
 BuildRequires:  perl
 BuildRequires:  perl(Config)
 BuildRequires:  perl(ExtUtils::CBuilder)
@@ -38,6 +41,7 @@ human-readable and native binary forms, and for hostname resolver operations.
 
 %prep
 %setup -q -n Socket-%{cpan_version}
+%patch0 -p1
 
 %build
 perl Makefile.PL INSTALLDIRS=vendor OPTIMIZE="$RPM_OPT_FLAGS"
@@ -59,6 +63,9 @@ make test
 %{_mandir}/man3/*
 
 %changelog
+* Thu Mar 03 2016 Jitka Plesnikova <jplesnik@redhat.com> - 2.010-4
+- Fix calling getnameinfo on tainted value (bug #1200167)
+
 * Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 2.010-3
 - Mass rebuild 2014-01-24
 
